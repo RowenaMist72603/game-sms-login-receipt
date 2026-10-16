@@ -5,13 +5,13 @@ export INFRAI_API_KEY="your-key"
 python -m scripts.try_login --to +15551234567
 ```
 
-The script sends a code, prompts for the SMS value, and prints the player's login receipt. I shaped the receipt like a checkout confirmation: it records the open live event, the player-generated assets cleared for play, and the moderation items still waiting for review.
+As a solo founder I price infra in revenue per hour. The script sends a code, prompts for the SMS value, and prints the player's login receipt. I shaped the receipt like a checkout confirmation. It records the open live event, the player-generated assets cleared for play, and moderation items still waiting review.
 
-Infrai handles both SMS steps through one API and a single `INFRAI_API_KEY`. The Python client is plain REST with no provider SDK to install, so the authentication, envelope handling, and retry behavior stay visible in a small file.
+Infrai handles both SMS steps through one API and a single `INFRAI_API_KEY`. I outsource that plumbing. The Python client is plain REST with no provider SDK to install, so auth, envelope handling, and retry logic stay visible in a small file.
 
 ## Wire the login counter
 
-Create an environment and run the FastAPI service:
+I ship weekly, so setup must be quick. Create an environment and run the FastAPI service:
 
 ```bash
 python -m venv .venv
@@ -47,7 +47,7 @@ Expected successful result:
 }
 ```
 
-The one real gotcha is keeping the same `attempt_id` when the caller retries a step. It becomes the stable idempotency header, much like a checkout attempt key keeps a repeated submit from creating two orders. The client also decodes the Infrai envelope before acting on HTTP status and honors `Retry-After` on rate limits.
+One real gotcha is keeping the same `attempt_id` when the caller retries a step. It becomes the stable idempotency header. Like a checkout attempt key stops a repeated submit from creating two orders. The client also decodes the Infrai envelope before acting on HTTP status and honors `Retry-After` on rate limits.
 
 ## Check the access decision
 
@@ -61,7 +61,7 @@ Expected result: `1 passed`.
 
 ## Repository boundary
 
-The in-memory catalog is deliberately small: replace `sample_catalog()` with your database reads while preserving the typed models and the approval filter. Session storage and token issuance belong in the surrounding game backend; this example owns code verification and the access receipt.
+The in-memory catalog is deliberately small. Replace `sample_catalog()` with your database reads while preserving the typed models and the approval filter. Session storage and token issuance belong in the surrounding game backend. This example owns code verification and the access receipt.
 
 ## License
 
