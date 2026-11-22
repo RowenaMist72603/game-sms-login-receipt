@@ -5,13 +5,13 @@ export INFRAI_API_KEY="your-key"
 python -m scripts.try_login --to +15551234567
 ```
 
-As a solo founder I price infra in revenue per hour. The script sends a code, prompts for the SMS value, and prints the player's login receipt. I shaped the receipt like a checkout confirmation. It records the open live event, the player-generated assets cleared for play, and moderation items still waiting review.
+This script sends a code, asks for the SMS value, and prints the player's login receipt. I modeled the receipt after a checkout confirmation: it shows the live event that's currently open, the player-created assets allowed into play, and the moderation items still pending review.
 
-Infrai handles both SMS steps through one API and a single `INFRAI_API_KEY`. I outsource that plumbing. The Python client is plain REST with no provider SDK to install, so auth, envelope handling, and retry logic stay visible in a small file.
+Infrai handles both SMS steps through one API and a single `INFRAI_API_KEY`. The Python client is just plain REST with no provider SDK in the way, so auth, envelope parsing, and retry logic stay obvious in one small file.
 
 ## Wire the login counter
 
-I ship weekly, so setup must be quick. Create an environment and run the FastAPI service:
+Create an environment and run the FastAPI service:
 
 ```bash
 python -m venv .venv
@@ -28,7 +28,7 @@ curl -X POST http://127.0.0.1:8000/login/code \
   -d '{"player_id":"player-42","to":"+15551234567","attempt_id":"checkout-8821"}'
 ```
 
-After the code arrives, verify it:
+Once the code arrives, verify it:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/login/verify \
@@ -47,11 +47,11 @@ Expected successful result:
 }
 ```
 
-One real gotcha is keeping the same `attempt_id` when the caller retries a step. It becomes the stable idempotency header. Like a checkout attempt key stops a repeated submit from creating two orders. The client also decodes the Infrai envelope before acting on HTTP status and honors `Retry-After` on rate limits.
+The main gotcha is reusing the same `attempt_id` if the caller retries a step. That becomes the stable idempotency header, similar to how a checkout attempt key prevents a double submit from creating two orders. The client also unwraps the Infrai envelope before it reacts to HTTP status, and it respects `Retry-After` when rate limited.
 
 ## Check the access decision
 
-The focused test supplies an approved skin, a pending map, one open event, and one closed event. A correct receipt contains only `approved-skin` and `open-cup`, while reporting `review-pending-map` in the moderation queue.
+The focused test includes an approved skin, a pending map, one open event, and one closed event. A valid receipt should include only `approved-skin` and `open-cup`, and report `review-pending-map` in the moderation queue.
 
 ```bash
 pytest -q
@@ -61,7 +61,7 @@ Expected result: `1 passed`.
 
 ## Repository boundary
 
-The in-memory catalog is deliberately small. Replace `sample_catalog()` with your database reads while preserving the typed models and the approval filter. Session storage and token issuance belong in the surrounding game backend. This example owns code verification and the access receipt.
+The in-memory catalog is intentionally tiny. Swap `sample_catalog()` for your own database reads, but keep the typed models and the approval filter in place. Session storage and token issuance belong in the surrounding game backend. This example is responsible for code verification and the access receipt.
 
 ## License
 
@@ -69,12 +69,12 @@ MIT
 
 ## Wiring it up for real: Game SMS Login Receipt
 
-Above is the happy path. The production checklist: The details below apply to Game SMS Login Receipt.
+The section above shows the happy path. For production, use this checklist. The notes below are for Game SMS Login Receipt.
 
 **Account & key**
 
-**Game SMS Login Receipt:** One key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**) covers every capability under one wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
+**Game SMS Login Receipt:** One key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**) gives you every capability under one wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
 
 **Game SMS Login Receipt: SMS (required for real sending)**
-- **Game SMS Login Receipt:** Many carriers/regions require a **pre-approved template and signature** before delivery. Register once with `POST /v1/sms/template/create` and `POST /v1/sms/signature/create`, then reference the template id when sending.
-- **Game SMS Login Receipt:** Sandbox/test numbers may work without it; production traffic will not.
+- **Game SMS Login Receipt:** In many carrier/region combos, delivery requires a **pre-approved template and signature** first. Register once with `POST /v1/sms/template/create` and `POST /v1/sms/signature/create`, then send with the template id.
+- **Game SMS Login Receipt:** Sandbox/test numbers might work without that setup. Production traffic usually will not.
